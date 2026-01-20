@@ -25,11 +25,11 @@ pipeline {
                     }
 
                     if (params.ENVIRONMENT == 'dev') {
-                        env.TARGET_SERVER = "ubuntu@34.236.237.89"
+                        env.TARGET_SERVER = "ubuntu@18.207.100.81"
                     } else if (params.ENVIRONMENT == 'qa') {
-                        env.TARGET_SERVER = "ubuntu@98.86.150.192"
+                        env.TARGET_SERVER = "ubuntu@44.200.17.105"
                     } else {
-                        env.TARGET_SERVER = "ubuntu@13.219.233.88"
+                        env.TARGET_SERVER = "ubuntu@3.236.197.23"
                     }
 
                     echo "Deploying to ${params.ENVIRONMENT.toUpperCase()} -> ${env.TARGET_SERVER}"
