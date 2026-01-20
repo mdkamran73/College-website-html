@@ -25,11 +25,11 @@ pipeline {
                     }
 
                     if (params.ENVIRONMENT == 'dev') {
-                        env.TARGET_SERVER = "ubuntu@34.236.237.89"
+                        env.TARGET_SERVER = "34.236.237.89"
                     } else if (params.ENVIRONMENT == 'qa') {
-                        env.TARGET_SERVER = "ubuntu@98.86.150.192"
+                        env.TARGET_SERVER = "98.86.150.192"
                     } else {
-                        env.TARGET_SERVER = "ubuntu@13.219.233.88"
+                        env.TARGET_SERVER = "13.219.233.88"
                     }
 
                     echo "Deploying to ${params.ENVIRONMENT.toUpperCase()} -> ${env.TARGET_SERVER}"
@@ -64,12 +64,18 @@ pipeline {
 
         stage('Deploy Application') {
             steps {
-                sshagent(credentials: ['ec2-ssh-key']) {
+                withCredentials([
+                    sshUserPrivateKey(
+                        credentialsId: 'ec2-ssh-key',
+                        keyFileVariable: 'SSH_KEY',
+                        usernameVariable: 'SSH_USER'
+                    )
+                ]) {
                     sh """
-                    ssh -o StrictHostKeyChecking=no ${TARGET_SERVER} 'sudo rm -rf ${DEPLOY_DIR}/*'
-                    scp -o StrictHostKeyChecking=no -r * ${TARGET_SERVER}:/tmp/
-                    ssh ${TARGET_SERVER} 'sudo cp -r /tmp/* ${DEPLOY_DIR}/'
-                    ssh ${TARGET_SERVER} 'sudo systemctl restart apache2'
+                    chmod 600 \$SSH_KEY
+                    ssh -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${TARGET_SERVER} 'sudo rm -rf ${DEPLOY_DIR}/*'
+                    scp -o StrictHostKeyChecking=no -i \$SSH_KEY -r * \$SSH_USER@${TARGET_SERVER}:/tmp/
+                    ssh -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@${TARGET_SERVER} 'sudo cp -r /tmp/* ${DEPLOY_DIR}/ && sudo systemctl restart apache2'
                     """
                 }
             }
@@ -82,7 +88,7 @@ pipeline {
             slackSend(
                 channel: "${SLACK_CHANNEL}",
                 color: "good",
-                message: "✅ *Deployment Successful*\nEnvironment: *${params.ENVIRONMENT.toUpperCase()}*\nURL: http://${TARGET_SERVER.split('@')[1]}\nBuild: #${env.BUILD_NUMBER}"
+                message: "✅ *Deployment Successful*\nEnvironment: *${params.ENVIRONMENT.toUpperCase()}*\nURL: http://${TARGET_SERVER}\nBuild: #${env.BUILD_NUMBER}"
             )
         }
 
@@ -90,7 +96,7 @@ pipeline {
             slackSend(
                 channel: "${SLACK_CHANNEL}",
                 color: "danger",
-                message: "❌ *Deployment Failed*\nEnvironment: *${params.ENVIRONMENT.toUpperCase()}*\nJob: ${env.JOB_NAME}\nBuild: #${env.BUILD_NUMBER}\nCheck Jenkins logs."
+                message: "❌ *Deployment Failed*\nEnvironment: *${params.ENVIRONMENT.toUpperCase()}*\nJob: ${env.JOB_NAME}\nBuild: #${env.BUILD_NUMBER}"
             )
         }
 
