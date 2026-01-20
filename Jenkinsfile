@@ -25,15 +25,25 @@ pipeline {
                     }
 
                     if (params.ENVIRONMENT == 'dev') {
-                        env.TARGET_SERVER = "ubuntu@18.207.100.81"
+                        env.TARGET_SERVER = "ubuntu@34.236.237.89"
                     } else if (params.ENVIRONMENT == 'qa') {
-                        env.TARGET_SERVER = "ubuntu@44.200.17.105"
+                        env.TARGET_SERVER = "ubuntu@98.86.150.192"
                     } else {
-                        env.TARGET_SERVER = "ubuntu@3.236.197.23"
+                        env.TARGET_SERVER = "ubuntu@13.219.233.88"
                     }
 
                     echo "Deploying to ${params.ENVIRONMENT.toUpperCase()} -> ${env.TARGET_SERVER}"
                 }
+            }
+        }
+
+        stage('Notify Deployment Started') {
+            steps {
+                slackSend(
+                    channel: "${SLACK_CHANNEL}",
+                    color: "#439FE0",
+                    message: "🚀 *Deployment Started*\nEnvironment: *${params.ENVIRONMENT.toUpperCase()}*\nJob: ${env.JOB_NAME}\nBuild: #${env.BUILD_NUMBER}"
+                )
             }
         }
 
@@ -67,14 +77,6 @@ pipeline {
     }
 
     post {
-
-        started {
-            slackSend(
-                channel: "${SLACK_CHANNEL}",
-                color: "#439FE0",
-                message: "🚀 *Deployment Started*\nEnvironment: *${params.ENVIRONMENT.toUpperCase()}*\nJob: ${env.JOB_NAME}\nBuild: #${env.BUILD_NUMBER}"
-            )
-        }
 
         success {
             slackSend(
